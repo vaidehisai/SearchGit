@@ -4,16 +4,19 @@ import UserProfile from './Components/UserProfile';
 import RepositoryList from './Components/RepositoryList';
 import { GitHubUser } from './types/GitHubUser';
 import { GitHubRepo } from './types/GitHubRepo';
-import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import { Container, TextField, Button, Typography, Box, CircularProgress } from '@mui/material';
 
 const App: React.FC = () => {
     const [username, setUsername] = useState('');
     const [user, setUser] = useState<GitHubUser | null>(null);
     const [repos, setRepos] = useState<GitHubRepo[]>([]);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false); // Add loading state
 
     const handleSearch = async () => {
         setError('');
+        setLoading(true); // Set loading to true before making API call
+
         try {
             const userResponse = await axios.get<GitHubUser>(`https://api.github.com/users/${username}`);
             const reposResponse = await axios.get<GitHubRepo[]>(`https://api.github.com/users/${username}/repos`);
@@ -24,6 +27,8 @@ const App: React.FC = () => {
             setError('User not found');
             setUser(null);
             setRepos([]);
+        } finally {
+            setLoading(false); // Set loading to false after API call completes
         }
     };
 
@@ -47,14 +52,17 @@ const App: React.FC = () => {
                 </Button>
             </Box>
 
+            {loading && <CircularProgress sx={{ mb: 2 }} />} {/* Show loading spinner while fetching data */}
+
             {error && (
                 <Typography color="error" sx={{ mb: 2 }}>
                     {error}
                 </Typography>
             )}
 
-            <UserProfile user={user} />
-            <RepositoryList repositories={repos} />
+            {/* Show user profile and repositories only if the user data is available */}
+            {user && <UserProfile user={user} />}
+            {repos.length > 0 && <RepositoryList repositories={repos} />}
         </Container>
     );
 };
